@@ -14,12 +14,16 @@ SSIM = "SSIM"
 MSE = "MSE"
 Histogram = "Histogram"
 Histogram_MSE = "Histogram+MSE"
-phase2_list = [MSE, Histogram, Histogram_MSE, SSIM]
+Preserve_Ratio = "Preserve_Ratio"
+phase2_list = [MSE, Histogram, Histogram_MSE, SSIM, Preserve_Ratio]
 
 
 def create_frame_array(path, method, movie_path):
     print(" creating frames array...")
     frames = os.listdir(path)
+    if len(frames) == 0:
+        print("No frames exist in {}!".format(path))
+        return []
     array_list = []
     t0 = time()
     for frame_path in frames:
@@ -64,7 +68,7 @@ def create_palette_image(codebook):
 
 def plot_and_save(images, movie_path, movie_name):
     print("Plotting...")
-    rows = 4
+    rows = 5
     cols = 1
     axes = []
     fig = plt.figure(1)
@@ -96,6 +100,8 @@ def create_palette_for_movie(trailer_name):
         t0 = time()
         path = movie_path + "/" + method
         frame_array = create_frame_array(path, method, movie_path)
+        if len(frame_array) == 0:
+            continue
         codebook = k_means_codebook(frame_array)
         image = create_palette_image(codebook)
         palette_images.append(image)
