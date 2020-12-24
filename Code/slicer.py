@@ -2,6 +2,7 @@ import cv2
 import sys
 import os
 import numpy as np
+from time import time
 import random
 import matplotlib.pyplot as plt
 
@@ -186,8 +187,8 @@ def remove_black_borders(frame, crop_dimensions):
 
 
 def remove_MPAA_frames(trailer, frame_step):
-    # if os.path.exists("../color_palettes/" + trailer[:-4] + ".png"):
-    #     return
+    print(" {}: creating frames...".format(trailer[:-4]))
+    t0 = time()
     trailer_name = trailer[:-4]
     cap = cv2.VideoCapture("../trailer_videos/" + trailer)
     index = 0
@@ -254,7 +255,9 @@ def remove_MPAA_frames(trailer, frame_step):
             img_path = "../filtered_frames/" + trailer_name + "/" + str(index) + ".png"
             # print(img_path[-50:])
             cv2.imwrite(img_path, rmvd_img)
+
         # End processing
         index = index + frame_step
 
     cap.release()
+    print(" %s: creating frames done in %0.3fs." % (trailer[:-4], time() - t0))

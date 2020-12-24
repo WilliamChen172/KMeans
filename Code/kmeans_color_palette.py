@@ -10,13 +10,14 @@ from time import time
 n_colors = 25
 
 root_dir = "../filtered_frames/"
+trailer = ""
 
 
 def create_frame_array(movie_path):
-    print(" creating frames array...")
+    print(" {}: creating frames array...".format(trailer))
     frames = os.listdir(movie_path)
     if len(frames) == 0:
-        print("No frames exist in {}!".format(movie_path))
+        print("  No frames exist in {}!".format(movie_path))
         return []
     t0 = time()
     array_list = []
@@ -36,27 +37,30 @@ def create_frame_array(movie_path):
         frame_array = np.reshape(frame_np, (w * h, d))
         array_list.append(frame_array)
     frames_array = np.concatenate(array_list)
-    print("     done in %0.3fs." % (time() - t0))
+    print(" %s: creating frames array done in %0.3fs." % (trailer, time() - t0))
     return frames_array
 
 
 def k_means_codebook(frames_array):
-    print(" creating kmeans codebook...")
+    print(" {}: creating kmeans codebook...".format(trailer))
     t0 = time()
     frames_array_sample = shuffle(frames_array, random_state=0)[:1000000]
     kmeans = KMeans(n_clusters=n_colors, random_state=0).fit(frames_array_sample)
-    print("     done in %0.3fs." % (time() - t0))
+    print(" %s: creating kmeans codebook done in %0.3fs." % (trailer, time() - t0))
     return kmeans.cluster_centers_
 
 
 def filter_dark_colours(codebook):
     delete_index = []
-    for i in range(codebook.shape[0]):
-        color = codebook[i]
-        # print(color)
-        if color[0] < 0.2 and color[1] < 0.2 and color[2] < 0.2:
-            delete_index.append(i)
-    codebook = np.delete(codebook, delete_index, axis=0)
+    if codebook.shape[0] > 20:
+        rm = codebook.shape[0] - 20
+        for i in reversed(range(codebook.shape[0])):
+            color = codebook[i]
+            # print(color)
+            if color[0] < 0.2 and color[1] < 0.2 and color[2] < 0.2 and rm > 0:
+                delete_index.append(i)
+                rm -= 1
+        codebook = np.delete(codebook, delete_index, axis=0)
     while len(codebook) > 20:
         codebook = np.delete(codebook, -1, axis=0)
     return codebook
@@ -70,7 +74,7 @@ def sRGBtoLin(colorChannel):
 
 
 def calculate_average_luminance(movie_path):
-    print(" calculating luminance...")
+    print(" {}: calculating luminance...".format(trailer))
     rY = 0.212655
     gY = 0.715158
     bY = 0.072187
@@ -95,14 +99,14 @@ def calculate_average_luminance(movie_path):
         lumin_array = [(rY * sRGBtoLin(frame_array[i][0]) + gY * sRGBtoLin(frame_array[i][1]) + bY * sRGBtoLin(frame_array[i][2])) for i in range(0, len(frame_array), 5)]
         mean_lumin = np.mean(lumin_array)
         lumin_list.append(mean_lumin)
-        print("     done in %0.3fs." % (time() - t0))
+        # print("     done in %0.3fs." % (time() - t0))
     mean_luminance = np.mean(lumin_list)
-    print("     done in %0.3fs." % (time() - t0))
+    print(" %s: calculating luminance done in %0.3fs." % (trailer, time() - t0))
     return mean_luminance
 
 
 def create_palette_image(codebook):
-    print(" creating colour palette...")
+    print(" {}: creating colour palette...".format(trailer))
     t0 = time()
     d = codebook.shape[1]
     len = codebook.shape[0]
@@ -111,11 +115,13 @@ def create_palette_image(codebook):
         for j in range(100):
             for k in range(100):
                 image[j][i * 100 + k] = codebook[i]
-    print("     done in %0.3fs." % (time() - t0))
+    print(" %s: creating colour palette done in %0.3fs." % (trailer, time() - t0))
     return image
 
 
 def create_palette_for_movie(trailer_name):
+    global trailer
+    trailer = trailer_name
     movie_path = root_dir + trailer_name
     palette_images = []
     frames_array = create_frame_array(movie_path)
@@ -132,7 +138,7 @@ def create_palette_for_movie(trailer_name):
 
 
 def plot_and_save(images, luminance, movie_name):
-    print("Plotting...")
+    print(" Plotting ...")
     rows = 1
     cols = 1
     axes = []
@@ -151,4 +157,4 @@ def plot_and_save(images, luminance, movie_name):
     save_path = "../color_palettes/" + movie_name + ".png"
     plt.savefig(save_path)
     # plt.show()
-    print("Image saved to " + save_path + ".\n\n")
+    print(" Image saved to " + save_path + ".\n\n")
