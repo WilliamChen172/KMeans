@@ -137,12 +137,12 @@ def filter_frames(img, height, width, step=5):
         "blue"] <= variation_tolerance_ratio) or (
             color_variation["red"] / total >= 0.55 and len(red_variation) / color_variation[
         "red"] <= variation_tolerance_ratio):
-        print("Too much green/blue/red")
+        # print("Too much green/blue/red")
         return True
     # or, if more than 99% is black, remove this frame
     elif color_variation["black"] / total >= 0.90 or (
             color_variation["black"] / total >= 0.95 and color_variation["white"] >= 0.01):
-        print("Too much black")
+        # print("Too much black")
         return True
     return False
 
@@ -155,13 +155,13 @@ def get_crop_dimensions(frame):
     for i in range(w):
         for j in range(h):
             if frame_np[i][j][0] >= 30 or frame_np[i][j][1] >= 30 or frame_np[i][j][2] >= 30:
-                print(frame_np[i][j])
+                # print(frame_np[i][j])
                 bottom = i
                 break
     for i in reversed(range(w)):
         for j in range(h):
             if frame_np[i][j][0] >= 30 or frame_np[i][j][1] >= 30 or frame_np[i][j][2] >= 30:
-                print(frame_np[i][j])
+                # print(frame_np[i][j])
                 top = i
                 break
     for j in range(h):
@@ -186,8 +186,8 @@ def remove_black_borders(frame, crop_dimensions):
 
 
 def remove_MPAA_frames(trailer, frame_step):
-    if len(os.listdir("../filtered_frames/" + trailer[:-4])) != 0:
-        return
+    # if os.path.exists("../color_palettes/" + trailer[:-4] + ".png"):
+    #     return
     trailer_name = trailer[:-4]
     cap = cv2.VideoCapture("../trailer_videos/" + trailer)
     index = 0
@@ -236,11 +236,11 @@ def remove_MPAA_frames(trailer, frame_step):
             #             "_" + str(index) + ".png", resized_img)
         else:
             if not crop_dimension:
-                print("getting new dimension")
+                # print("getting new dimension")
                 dimension_1 = get_crop_dimensions(resized_img)
                 dimension_2 = get_crop_dimensions(mid_img)
                 dimension_3 = get_crop_dimensions(third_img)
-                print(dimension_1, dimension_2, dimension_3)
+                # print(dimension_1, dimension_2, dimension_3)
                 dimension_1_size = (dimension_1[1] - dimension_1[0]) * (dimension_1[3] - dimension_1[2])
                 dimension_2_size = (dimension_2[1] - dimension_2[0]) * (dimension_2[3] - dimension_2[2])
                 dimension_3_size = (dimension_3[1] - dimension_3[0]) * (dimension_3[3] - dimension_3[2])
@@ -252,7 +252,7 @@ def remove_MPAA_frames(trailer, frame_step):
                     crop_dimension = dimension_3
             rmvd_img = remove_black_borders(resized_img, crop_dimension)
             img_path = "../filtered_frames/" + trailer_name + "/" + str(index) + ".png"
-            print(img_path[-50:])
+            # print(img_path[-50:])
             cv2.imwrite(img_path, rmvd_img)
         # End processing
         index = index + frame_step
