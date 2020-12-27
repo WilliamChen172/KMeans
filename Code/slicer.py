@@ -1,10 +1,7 @@
 import cv2
-import sys
 import os
 import numpy as np
 from time import time
-import random
-import matplotlib.pyplot as plt
 
 sensitivity = 15
 # height, width, depth = img.shape
@@ -131,7 +128,8 @@ def filter_frames(img, height, width, step=5):
             total += 1
 
     variation_tolerance_ratio = 0.105
-    # If more than 55% of frame is within some tolerance of green, blue or red, and not much variation between the colors, then remove the frame
+    # If more than 55% of frame is within some tolerance of green, blue or red, and not much variation between the
+    # colors, then remove the frame
     if (color_variation["green"] / total >= 0.55 and len(green_variation) / color_variation[
         "green"] <= variation_tolerance_ratio) or (
             color_variation["blue"] / total >= 0.55 and len(blue_variation) / color_variation[
@@ -187,9 +185,12 @@ def remove_black_borders(frame, crop_dimensions):
 
 
 def remove_MPAA_frames(trailer, frame_step):
-    print(" {}: creating frames...".format(trailer[:-4]))
+    print(" creating frames...")
     t0 = time()
     trailer_name = trailer[:-4]
+    frames = os.listdir("../filtered_frames/" + trailer_name)
+    if len(frames) > 0:
+        return
     cap = cv2.VideoCapture("../trailer_videos/" + trailer)
     index = 0
     amount_of_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -197,17 +198,15 @@ def remove_MPAA_frames(trailer, frame_step):
 
     cap2 = cv2.VideoCapture("../trailer_videos/" + trailer)
     mid_index = amount_of_frames // 2
-    # print(mid_index)
     cap2.set(cv2.CAP_PROP_POS_FRAMES, mid_index)
     _, mid_img = cap2.retrieve(mid_index)
     height, width, depth = mid_img.shape
     height = min(height, 480)
     width = min(width, 854)
     mid_img = cv2.resize(mid_img, (width, height))
-    # print(mid_img[0][0])
+
     cap3 = cv2.VideoCapture("../trailer_videos/" + trailer)
     third_index = amount_of_frames // 3
-    # print(third_index)
     cap3.set(cv2.CAP_PROP_POS_FRAMES, third_index)
     _, third_img = cap3.retrieve(third_index)
     height, width, depth = third_img.shape
@@ -222,7 +221,7 @@ def remove_MPAA_frames(trailer, frame_step):
         ret, original_img = cap.retrieve(index)
         # Resize frame to be max of 854x480
         height, width, depth = original_img.shape
-        height = min(height, 480)
+        height = int(min(height * 854 / width, 480))
         width = min(width, 854)
         resized_img = cv2.resize(original_img, (width, height))
 
@@ -231,11 +230,7 @@ def remove_MPAA_frames(trailer, frame_step):
 
         # Process the image and remove MPAA and all-black/mostly-black frames
         remove_frame = filter_frames(img, height, width)
-        if remove_frame:
-            pass
-            # cv2.imwrite("../version1/removed/" + trailer + "/" + video_name +
-            #             "_" + str(index) + ".png", resized_img)
-        else:
+        if not remove_frame:
             if not crop_dimension:
                 # print("getting new dimension")
                 dimension_1 = get_crop_dimensions(resized_img)
@@ -253,11 +248,11 @@ def remove_MPAA_frames(trailer, frame_step):
                     crop_dimension = dimension_3
             rmvd_img = remove_black_borders(resized_img, crop_dimension)
             img_path = "../filtered_frames/" + trailer_name + "/" + str(index) + ".png"
-            # print(img_path[-50:])
+            # print(img_path)
             cv2.imwrite(img_path, rmvd_img)
 
         # End processing
         index = index + frame_step
 
     cap.release()
-    print(" %s: creating frames done in %0.3fs." % (trailer[:-4], time() - t0))
+    print("   done in %0.3fs." % (time() - t0))

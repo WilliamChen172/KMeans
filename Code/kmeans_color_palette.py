@@ -1,4 +1,3 @@
-import sys
 import os
 import cv2
 import numpy as np
@@ -6,6 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.utils import shuffle
 from time import time
+from multiprocessing import Pool
 
 n_colors = 25
 
@@ -14,7 +14,7 @@ trailer = ""
 
 
 def create_frame_array(movie_path):
-    print(" {}: creating frames array...".format(trailer))
+    print(" creating frames array...")
     frames = os.listdir(movie_path)
     if len(frames) == 0:
         print("  No frames exist in {}!".format(movie_path))
@@ -37,16 +37,16 @@ def create_frame_array(movie_path):
         frame_array = np.reshape(frame_np, (w * h, d))
         array_list.append(frame_array)
     frames_array = np.concatenate(array_list)
-    print(" %s: creating frames array done in %0.3fs." % (trailer, time() - t0))
+    print("   done in %0.3fs." % (time() - t0))
     return frames_array
 
 
 def k_means_codebook(frames_array):
-    print(" {}: creating kmeans codebook...".format(trailer))
+    print(" creating kmeans codebook...")
     t0 = time()
     frames_array_sample = shuffle(frames_array, random_state=0)[:1000000]
     kmeans = KMeans(n_clusters=n_colors, random_state=0).fit(frames_array_sample)
-    print(" %s: creating kmeans codebook done in %0.3fs." % (trailer, time() - t0))
+    print("   done in %0.3fs." % (time() - t0))
     return kmeans.cluster_centers_
 
 
@@ -73,40 +73,57 @@ def sRGBtoLin(colorChannel):
         return ((colorChannel + 0.055) / 1.055) ** 2.4
 
 
-def calculate_average_luminance(movie_path):
-    print(" {}: calculating luminance...".format(trailer))
+def calculate_frame_luminance(frame_path):
     rY = 0.212655
     gY = 0.715158
     bY = 0.072187
+    if not os.path.exists(frame_path):
+        print("Full path doesn't exist!")
+        return
+    frame = cv2.imread(frame_path)
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    frame_np = np.array(frame, dtype=np.float64) / 255
+    w, h, d = tuple(frame_np.shape)
+    assert d == 3
+    frame_array = np.reshape(frame_np, (w * h, d))
+    lumin_array = [
+        (rY * sRGBtoLin(frame_array[i][0]) + gY * sRGBtoLin(frame_array[i][1]) + bY * sRGBtoLin(frame_array[i][2]))
+        for
+        i in range(0, len(frame_array), 5)]
+    mean_lumin = np.mean(lumin_array)
+    return mean_lumin
+
+
+def calculate_average_luminance(movie_path):
+    print(" calculating luminance...")
+
     frames = os.listdir(movie_path)
     if len(frames) == 0:
         print("No frames exists!")
         return []
     t0 = time()
-    lumin_list = []
-    for frame_path in frames:
-        if frame_path[:-4] == "palette":
-            continue
-        full_path = movie_path + "/" + frame_path
-        if not os.path.exists(full_path):
-            exit()
-        frame = cv2.imread(full_path)
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        frame_np = np.array(frame, dtype=np.float64) / 255
-        w, h, d = tuple(frame_np.shape)
-        assert d == 3
-        frame_array = np.reshape(frame_np, (w * h, d))
-        lumin_array = [(rY * sRGBtoLin(frame_array[i][0]) + gY * sRGBtoLin(frame_array[i][1]) + bY * sRGBtoLin(frame_array[i][2])) for i in range(0, len(frame_array), 5)]
-        mean_lumin = np.mean(lumin_array)
-        lumin_list.append(mean_lumin)
-        # print("     done in %0.3fs." % (time() - t0))
+
+    cpu = os.cpu_count() - 1
+    if cpu == 0:
+        cpu = 1
+
+    frame_arr = []
+    for frame in frames:
+        full_path = movie_path + "/" + frame
+        frame_arr.append(full_path)
+
+    pool = Pool(processes=cpu)
+    lumin_list = pool.map(calculate_frame_luminance, frame_arr)
+    pool.close()
+    pool.join()
     mean_luminance = np.mean(lumin_list)
-    print(" %s: calculating luminance done in %0.3fs." % (trailer, time() - t0))
+
+    print("   done in %0.3fs." % (time() - t0))
     return mean_luminance
 
 
 def create_palette_image(codebook):
-    print(" {}: creating colour palette...".format(trailer))
+    print(" creating colour palette...")
     t0 = time()
     d = codebook.shape[1]
     len = codebook.shape[0]
@@ -115,7 +132,7 @@ def create_palette_image(codebook):
         for j in range(100):
             for k in range(100):
                 image[j][i * 100 + k] = codebook[i]
-    print(" %s: creating colour palette done in %0.3fs." % (trailer, time() - t0))
+    print("   done in %0.3fs." % (time() - t0))
     return image
 
 
