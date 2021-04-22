@@ -1,0 +1,23 @@
+Instructions to use this project:
+
+1. Move the trailers you want to "palettize" into the trailer_videos folder.
+
+2. Run create_frames.py. The program will automatically create a folder filtered_frames that hold the sliced frames for
+   each trailer. No input arguments are required.
+
+3. After create_frames.py has finished running, run process_frames.py. The program will automatically create a folder
+   color_palettes that hold the visualized palettes for each trailer. This program can take an exceptionally long time
+   to run depending on the processing power of the machine. No input arguments are required.
+
+4. (Optional) This project is currently configured in an experimental mode where only palette images are produced for
+   visualization but the palette colours are not saved. To export palette colours, first decide upon a single pair of
+   saliency/saturation weights and modify the w global array in kmeans_color_palette.py to have length 1. Uncomment any
+   commented code in process_frames.py. The palette values for each trailer run by process_frames.py will be exported
+   to a single csv file palette.csv in the directory, and there is code written to prevent duplication as well as
+   sorting the entries after new palettes are added.
+
+P.S. Cropping dimensions from remove_MPAA_frames() from slicer.py can be buggy depending on the trailer you're using.
+     If it doesn't work as expected I would suggest taking a look at how dimension_1, dimension_2, and dimension_3
+     are created and tweak the code to get the frame you want to use as your crop dimensions.
+
+Please contact William Chen at chenyuwilliam@gmail.com if you have any questions.

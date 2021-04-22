@@ -34,16 +34,18 @@ def process_videos(trailers):
         hex_palette = RGB2HEX(palette)
         trailer_palette = np.concatenate([trailer_palette, hex_palette])
 
-        # Delete frames to save space after finishing processing the trailer
-        files = os.listdir("../filtered_frames/" + trailer_name)
-        for file in files:
-            os.remove("../filtered_frames/" + trailer_name + "/" + file)
-        os.rmdir("../filtered_frames/" + trailer_name)
+        # Delete frames to save space after finishing processing the trailer, comment out when debugging.
+        # By commenting out this code you will have to run create_frames.py again to slice frames for each trailer.
+        # files = os.listdir("../filtered_frames/" + trailer_name)
+        # for file in files:
+        #     os.remove("../filtered_frames/" + trailer_name + "/" + file)
+        # os.rmdir("../filtered_frames/" + trailer_name)
 
-        with open("../palettes.csv", "a+", newline='\n') as my_csv:
-            csvWriter = csv.writer(my_csv, delimiter=',')
-            csvWriter.writerow(trailer_palette)
-            my_csv.close()
+        # Write palette to csv file, comment out when debugging.
+        # with open("../palettes.csv", "a+", newline='\n') as my_csv:
+        #     csvWriter = csv.writer(my_csv, delimiter=',')
+        #     csvWriter.writerow(trailer_palette)
+        #     my_csv.close()
 
         print("{}: Total time: {:.3f}s\n".format(trailer, time() - start))
 
@@ -58,18 +60,20 @@ if __name__ == "__main__":
             continue
         trailers.append(f)
 
-    if os.path.exists("../palettes.csv"):
-        with open('../palettes.csv') as csvfile:
-            palette_list = csv.reader(csvfile)
-            for row in palette_list:
-                trailer = row[0] + ".mp4"
-                if trailer in trailers:
-                    print(row)
-                    trailers.remove(trailer)
+    # Code to prevent duplicate rows being written to csv, comment out when debugging.
+    # if os.path.exists("../palettes.csv"):
+    #     with open('../palettes.csv') as csvfile:
+    #         palette_list = csv.reader(csvfile)
+    #         for row in palette_list:
+    #             trailer = row[0] + ".mp4"
+    #             if trailer in trailers:
+    #                 print(row)
+    #                 trailers.remove(trailer)
 
     create_folders()
     process_videos(trailers)
 
+    # Sort the palettes in csv file alphabetically after finishing writing to it.
     if os.path.exists("../palettes.csv"):
         file = []
         with open('../palettes.csv') as csvfile:

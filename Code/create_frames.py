@@ -35,13 +35,14 @@ if __name__ == "__main__":
             continue
         trailers.append(f)
 
-    if os.path.exists("../palettes.csv"):
-        with open('../palettes.csv') as csvfile:
-            palette_list = csv.reader(csvfile)
-            for row in palette_list:
-                trailer = row[0] + ".mp4"
-                if trailer in trailers:
-                    trailers.remove(trailer)
+    # Code to prevent duplication, comment out when debugging
+    # if os.path.exists("../palettes.csv"):
+    #     with open('../palettes.csv') as csvfile:
+    #         palette_list = csv.reader(csvfile)
+    #         for row in palette_list:
+    #             trailer = row[0] + ".mp4"
+    #             if trailer in trailers:
+    #                 trailers.remove(trailer)
 
     create_folders(trailers)
     cpu = os.cpu_count() - 1
